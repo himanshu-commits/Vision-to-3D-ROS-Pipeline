@@ -1,1 +1,229 @@
-# Vision-to-3D-ROS-Pipeline
+# Neura Robotics – Vision Programming Challenge  
+**Author:** Himanshu Gupta  
+**Environment:** ROS Noetic + Ubuntu 20.04 + RViz  
+**Repository:** https://github.com/himanshu-commits (private submission)
+
+### **Task 1 — Checkerboard Edge Detection (Standalone Python)**
+
+**Objective:**
+Detect the outer boundary of a checkerboard image and overlay the outer box clearly in green.
+
+**Key Concepts Used:**
+
+* **CLAHE** for contrast normalization
+* **Gaussian Blur** for noise suppression
+* **Adaptive Canny** edge detection
+* **Morphological Closing** to fix edge discontinuity
+* **Contour Analysis** to identify the outer boundary
+* **Rotated Bounding Box (minAreaRect)** for robust geometric alignment
+
+**Main Libraries Used:**
+
+| Library        | Purpose                                              |
+| -------------- | ---------------------------------------------------- |
+| `OpenCV (cv2)` | Image processing, edge detection, contour extraction |
+| `NumPy`        | Matrix and pixel array operations                    |
+| `argparse`     | Command-line execution support                       |
+
+**Run Instructions (Standalone, No ROS Required):**
+
+```bash
+cd catkin_ws/src/edge_detection/scripts
+python3 edge_detector.py --input ../data --output ../outputs
+```
+
+or for a single image:
+
+```bash
+python3 edge_detector.py --input ../data/Image_1.png --output ../outputs
+```
+
+This generates output images with the green outer box drawn.
+
+---
+
+### **Task 2 — Vision_ROS (RGB + Depth + 3D Edge Projection)**
+
+**Objective:**
+Extend edge detection into a ROS environment, read streaming camera data, and generate a **3D point cloud of the detected edges**.
+
+**ROS Topics Used from Bag File:**
+
+| Topic                          | Meaning                      |
+| ------------------------------ | ---------------------------- |
+| `/camera/color/image_raw`      | RGB image feed               |
+| `/camera/depth/image_rect_raw` | Aligned depth image          |
+| `/camera/color/camera_info`    | Intrinsic calibration matrix |
+| `/tf` & `/clock`               | Timing & frame transforms    |
+
+**Key Additional Concepts:**
+
+* Pixel-to-3D projection using camera intrinsics
+* Publishing `sensor_msgs/PointCloud2`
+* Creating ROS service and message definitions
+
+**ROS Message & Service Files Created:**
+
+```
+msg/EdgePixel.msg
+srv/DetectEdgesFromDir.srv
+```
+
+**Main Libraries Used:**
+
+| Library                                  | Purpose                             |
+| ---------------------------------------- | ----------------------------------- |
+| `rospy`                                  | ROS node creation                   |
+| `cv_bridge`                              | Convert ROS → OpenCV images         |
+| `sensor_msgs`                            | Image / Depth / PointCloud messages |
+| `message_generation` + `message_runtime` | Custom msg/srv support              |
+
+**Run Instructions (With Bag File):**
+
+**Terminal 1:**
+
+```bash
+roscore
+```
+
+**Terminal 2:**
+
+```bash
+rosparam set /use_sim_time true
+rosbag play --clock -l withpointcloud.bag
+```
+
+**Terminal 3 (Edge detection node):**
+
+```bash
+rosrun edge_detection edge_ros_node.py
+```
+
+**To view in RViz:**
+
+```bash
+rviz -d ~/catkin_ws/src/edge_detection/rviz/task2.rviz
+```
+
+Expected visualization:
+
+* Checkerboard edges in `/edges` image view
+* 3D edge points in `/edge_points`
+
+---
+
+### **Task 3 — Robot_ROS (Robot + 3D Edge Markers in RViz)**
+
+**Objective:**
+Combine the robot URDF model and the detected 3D edge points. Visualize both in RViz, showing how the edges exist in the robot’s workspace.
+
+**Key Concepts Used:**
+
+* URDF robot model visualization
+* RViz marker overlays
+* Coordinate frame alignment (`tf` tree)
+* Live point cloud + robot body pose rendering
+
+**Main Libraries Used:**
+
+| Library                     | Purpose                                            |
+| --------------------------- | -------------------------------------------------- |
+| `visualization_msgs/Marker` | Drawing geometric marker shapes                    |
+| `tf`                        | Managing frame transforms between camera and robot |
+| `rospy`                     | Node execution & callbacks                         |
+
+**Run Instructions:**
+
+**Terminal 1:**
+
+```bash
+roscore
+```
+
+**Terminal 2 — Launch robot model:**
+
+```bash
+roslaunch mira_picker display.launch \
+  gripper_name:=robotiq2f_140 \
+  publish_joint_state:=false \
+  publish_robot_state:=false
+```
+
+**Terminal 3 — Play bag:**
+
+```bash
+rosparam set /use_sim_time true
+rosbag play --clock -l withpointcloud.bag
+```
+
+**Terminal 4 — Edge marker visualization:**
+
+```bash
+rosrun edge_detection edge_marker_node.py
+```
+
+**View in RViz:**
+
+```bash
+rviz -d ~/catkin_ws/src/edge_detection/rviz/task3.rviz
+```
+
+Expected visualization:
+
+* Full Mira robot visible
+* Green 3D edge marker overlaid in the correct physical frame
+* Marker moves consistently as video progresses (simulation loop)
+
+## File Structure
+```
+catkin_ws/
+├── build/                                   # generated by catkin_make
+├── devel/                                   # generated by catkin_make
+└── src/
+    ├── edge_detection/
+    │   ├── CMakeLists.txt
+    │   ├── package.xml
+    │   ├── setup.py
+    │
+    │   ├── data/                            # Task 1 input images
+    │   │   ├── Image_1.png
+    │   │   ├── Image_2.png
+    │   │   ├── Image_3.png
+    │   │   ├── Image_4.png
+    │   │   └── Image_5.jpg
+    │
+    │   ├── outputs/                         # Task 1 output (optional)
+    │   │   ├── Image_1_edges.png
+    │   │   ├── Image_2_edges.png
+    │   │   ├── Image_3_edges.png
+    │   │   ├── Image_4_edges.png
+    │   │   └── Image_5_edges.jpg
+    │
+    │   ├── msg/
+    │   │   └── EdgePixel.msg                # Custom message 
+    │   ├── srv/
+    │   │   └── DetectEdgesFromDir.srv       # Service for processing directory of images
+    │
+    │   ├── scripts/                         # ROS executable Python nodes
+    │   │   ├── edge_ros_node.py             # Task 2: Subscribe image + publish edges/pointcloud
+    │   │   ├── edge_marker_node.py          # Task 3: Visualize 3D edge markers in RViz
+    │   │   └── edge_dir_service.py          # Task 2: Service to detect edges in folder
+    │
+    │   ├── launch/
+    │   │   ├── vision_ros.launch            # Task 2 visualization launch (edges + cloud)
+    │   │   └── robot_ros.launch             # Task 3 robot + markers visualization
+    │
+    │   ├── rviz/
+    │   │   ├── task2.rviz                   # Saved RViz config for Task 2
+    │   │   └── task3.rviz                   # Saved RViz config for Task 3
+    │
+    │   └── src/edge_detection/              # Python importable package
+    │       ├── __init__.py
+    │       └── edge_detector.py             # Task 1 detection logic (imported by ROS nodes)
+    │
+    ├── mira_description/                    # Provided robot model package
+    ├── mira_picker/                         # Provided robot + gripper configuration
+    ├── realsense2_description/              # Camera description package
+    └── robotiq_2f_140_gripper_visualization/
+
+```
