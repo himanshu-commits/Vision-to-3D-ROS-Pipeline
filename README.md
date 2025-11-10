@@ -1,7 +1,6 @@
 # Neura Robotics – Vision Programming Challenge  
 **Author:** Himanshu Gupta  
 **Environment:** ROS Noetic + Ubuntu 20.04 + RViz  
-**Repository:** https://github.com/himanshu-commits (private submission)
 
 ### **Task 1 — Checkerboard Edge Detection (Standalone Python)**
 
