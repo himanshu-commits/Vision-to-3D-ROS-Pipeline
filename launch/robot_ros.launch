@@ -1,0 +1,32 @@
+<launch>
+  <!-- Use bag time -->
+  <param name="/use_sim_time" value="true"/>
+
+  <!-- Robot model (as given in the challenge) -->
+  <include file="$(find mira_picker)/launch/display.launch">
+    <arg name="gripper_name" value="robotiq2f_140"/>
+    <arg name="publish_joint_state" value="false"/>
+    <arg name="publish_robot_state" value="false"/>
+  </include>
+
+  <!-- Your Task 2 node (publishes /edges and /edge_points) -->
+  <node pkg="edge_detection" type="edge_ros_node.py" name="edge_node" output="screen">
+    <param name="rgb_topic" value="/camera/color/image_raw"/>
+    <param name="depth_topic" value="/camera/depth/image_rect_raw"/>
+    <param name="info_topic" value="/camera/color/camera_info"/>
+    <param name="edges_topic" value="/edges"/>
+    <param name="cloud_topic" value="/edge_points"/>
+  </node>
+
+  <!-- Marker node (turns edge_points into green spheres) -->
+  <node pkg="edge_detection" type="edge_marker_node.py" name="edge_marker_node" output="screen">
+    <param name="cloud_topic" value="/edge_points"/>
+    <param name="marker_topic" value="/edge_markers"/>
+    <param name="point_scale" value="0.005"/>
+    <param name="alpha" value="1.0"/>
+  </node>
+
+  <!-- Optional: RViz preconfig (only if you save one) -->
+  <!-- <node pkg="rviz" type="rviz" name="rviz" args="-d $(find edge_detection)/rviz/robot_edges.rviz"/> -->
+</launch>
+

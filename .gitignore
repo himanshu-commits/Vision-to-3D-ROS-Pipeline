@@ -1,0 +1,25 @@
+# Catkin / ROS build artifacts
+build/
+devel/
+install/
+
+# Python
+__pycache__/
+*.pyc
+
+# Editors
+.vscode/
+.idea/
+
+# ROS logs / bag actives
+*.log
+*.bag.active
+*.bak
+
+# Large data (keep samples small)
+*.bag
+*.mp4
+*.mov
+
+# Generated outputs (optional)
+outputs/

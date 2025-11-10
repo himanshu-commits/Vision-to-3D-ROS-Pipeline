@@ -1,0 +1,5 @@
+string dir_path
+---
+bool ok
+int32 processed
+
