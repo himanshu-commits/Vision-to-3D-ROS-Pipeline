@@ -9,7 +9,7 @@
     <arg name="publish_robot_state" value="false"/>
   </include>
 
-  <!-- Your Task 2 node (publishes /edges and /edge_points) -->
+  <!--  Task 2 node (publishes /edges and /edge_points) -->
   <node pkg="edge_detection" type="edge_ros_node.py" name="edge_node" output="screen">
     <param name="rgb_topic" value="/camera/color/image_raw"/>
     <param name="depth_topic" value="/camera/depth/image_rect_raw"/>
